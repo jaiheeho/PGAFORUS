@@ -47,7 +47,7 @@ def get_pga_leaderboard():
             "Rank": rank,
             "Player": name,
             "Score": score,
-            "Thru": thru,
+            "Total Score": score,
             "Round Scores": ", ".join(round_scores) if round_scores else "N/A"
         })
     
@@ -74,7 +74,13 @@ def calculate_betting_points(selected_players, leaderboard_df):
                 elif rank_num >= 31:
                     player_points = -1
             
-            points_summary.append({"Player": player, "Rank": rank, "Points": player_points})
+            points_summary.append({
+                "Player": player, 
+                "Rank": rank, 
+                "Total Score": player_row.iloc[0]["Total Score"],
+                "Round Scores": player_row.iloc[0]["Round Scores"],
+                "Points": player_points
+            })
             total_points += player_points
     
     return {"total_points": total_points, "details": points_summary}
@@ -114,9 +120,57 @@ def bet():
     if df is None:
         return jsonify({"error": "Failed to fetch leaderboard"}), 500
     
-    selected_players = random.sample(list(df["Player"][:10]), min(5, len(df)))
-    results = calculate_betting_points(selected_players, df)
-    return jsonify({"selected_players": selected_players, "betting_results": results})
+    bet_entries = [
+        {"owner": "이프로", "players": ["Sepp Straka", "Sam Burns", "Justin Thomas", "Hideki Matsuyama", "Nick Taylor"]},
+        {"owner": "허프로", "players": ["Sungjae Im", "Sam Burns", "Justin Thomas", "Hideki Matsuyama", "Tom Kim"]},
+        {"owner": "희프로", "players": ["Sungjae Im", "K.H. Lee", "Tom Kim", "Hideki Matsuyama", "Sepp Straka"]}
+    ]
+    
+    results = []
+    for entry in bet_entries:
+        points_result = calculate_betting_points(entry["players"], df)
+        results.append({"owner": entry["owner"], "players": points_result["details"], "total_score": points_result["total_points"]})
+    
+    bet_table = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Betting Results</title>
+        <link rel="stylesheet" 
+              href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
+    </head>
+    <body>
+        <div class="container mt-4">
+            <h2 class="text-center">Betting Results</h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Owner</th>
+                        <th>Players with Current Rank, Total Score, and Round Scores</th>
+                        <th>Total Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                    <tr>
+                        <td>{{ result['owner'] }}</td>
+                        <td>
+                            <ul>
+                                {% for player in result['players'] %}
+                                    <li>{{ player['Player'] }} (Rank: {{ player['Rank'] }}, Total Score: {{ player['Total Score'] }}, Round Scores: {{ player['Round Scores'] }})</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td>{{ result['total_score'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </body>
+    </html>
+    """
+    return render_template_string(bet_table, results=results)
 
 if __name__ == "__main__":
     os.system("fuser -k 5000/tcp")  # Free up port 5000 if occupied
