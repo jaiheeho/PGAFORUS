@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PGA Betting Results</title>
+    <link rel="stylesheet" 
+          href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .positive-points { color: green; }
+        .negative-points { color: red; }
+        .zero-points { color: black; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2 class="text-center">PGA Betting Results</h2>
+        {% for result in results %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>{{ result.owner }} - Total Points: 
+                        <span class="{% if result.total_points > 0 %}positive-points
+                                     {% elif result.total_points < 0 %}negative-points
+                                     {% else %}zero-points{% endif %}">
+                            {{ result.total_points }}
+                        </span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Rank</th>
+                                <th>Total Score</th>
+                                <th>Round Scores</th>
+                                <th>Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for player in result.details %}
+                                <tr>
+                                    <td>{{ player.Player }}</td>
+                                    <td>{{ player.Rank }}</td>
+                                    <td>{{ player.Total_Score }}</td>
+                                    <td>{{ player.Round_Scores }}</td>
+                                    <td class="{% if player.Points > 0 %}positive-points
+                                               {% elif player.Points < 0 %}negative-points
+                                               {% else %}zero-points{% endif %}">
+                                        {{ player.Points }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html> 

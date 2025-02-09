@@ -59,56 +59,21 @@ def bet():
     df = get_pga_leaderboard()
     if df is None:
         return jsonify({"error": "Failed to fetch leaderboard"}), 500
-    
+
     from bet_data_base import BetDatabase
     bet_db = BetDatabase()
     bet_entries = bet_db.get_all_entries()
     
     results = []
     for entry in bet_entries:
-        points_result = calculate_betting_points(entry["players"], df)
-        results.append({"owner": entry["owner"], "players": points_result["details"], "total_score": points_result["total_points"]})
+        bet_result = calculate_betting_points(entry["players"], df)
+        results.append({
+            "owner": entry["owner"],
+            "total_points": bet_result["total_points"],
+            "details": bet_result["details"]
+        })
     
-    bet_table = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Betting Results</title>
-        <link rel="stylesheet" 
-              href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
-    </head>
-    <body>
-        <div class="container mt-4">
-            <h2 class="text-center">Betting Results</h2>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Owner</th>
-                        <th>Players with Current Rank, Total Score, and Round Scores</th>
-                        <th>Total Score</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for result in results %}
-                    <tr>
-                        <td>{{ result['owner'] }}</td>
-                        <td>
-                            <ul>
-                                {% for player in result['players'] %}
-                                    <li>{{ player['Player'] }} (Rank: {{ player['Rank'] }}, Total Score: {{ player['Total Score'] }}, Round Scores: {{ player['Round Scores'] }})</li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                        <td>{{ result['total_score'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </body>
-    </html>
-    """
-    return render_template_string(bet_table, results=results)
+    return render_template('bet.html', results=results)
 
 if __name__ == "__main__":
     import os
