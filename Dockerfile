@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir flask pandas requests beautifulsoup4 gunicorn bs4
 EXPOSE 8080
 
 # Run the app with Gunicorn
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "PGA_FOR_US:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "pga_leaderboard_parser:app"]

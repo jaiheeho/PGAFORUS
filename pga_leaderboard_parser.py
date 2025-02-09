@@ -173,6 +173,6 @@ def bet():
     return render_template_string(bet_table, results=results)
 
 if __name__ == "__main__":
-    os.system("fuser -k 5000/tcp")  # Free up port 5000 if occupied
-    print(" * Running on http://127.0.0.1:5000")
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    import os
+    port = int(os.environ.get("PORT", 8080))  # Default to 8080 if PORT is not set
+    app.run(host="0.0.0.0", port=port, debug=True)
