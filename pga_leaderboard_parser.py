@@ -4,7 +4,7 @@ import json
 import random
 import os
 from bs4 import BeautifulSoup
-from flask import Flask, jsonify, render_template_string
+from flask import Flask, jsonify, render_template, render_template_string
 from leaderboard_fetcher import get_pga_leaderboard
 
 app = Flask(__name__)
@@ -52,23 +52,7 @@ def leaderboard():
         return jsonify({"error": "Failed to fetch leaderboard"}), 500
     
     html_table = df.to_html(classes='table table-striped', index=False)
-    html_template = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>PGA Leaderboard</title>
-        <link rel="stylesheet" 
-              href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
-    </head>
-    <body>
-        <div class="container mt-4">
-            <h2 class="text-center">PGA Leaderboard</h2>
-            {{ table | safe }}
-        </div>
-    </body>
-    </html>
-    """
-    return render_template_string(html_template, table=html_table)
+    return render_template('leaderboard.html', table=html_table)
 
 @app.route("/bet", methods=["GET"])
 def bet():
