@@ -13,6 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Create volume for SQLite database
 VOLUME /app/instance
 
+# Create migrations directory if it doesn't exist
+RUN mkdir -p migrations
+
 # Expose port 8080 for Cloud Run
 EXPOSE 8080
 

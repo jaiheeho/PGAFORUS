@@ -20,9 +20,20 @@ app.secret_key = os.urandom(24)  # Generate a random secret key for better secur
 db.init_app(app)
 migrate = Migrate(app, db)
 
-# Create tables
-with app.app_context():
-    db.create_all()
+# Add this function
+def init_db():
+    with app.app_context():
+        try:
+            # Create tables if they don't exist
+            db.create_all()
+            # Run migrations
+            from flask_migrate import upgrade
+            upgrade()
+        except Exception as e:
+            print(f"Database initialization error: {e}")
+
+# Call init_db() when starting the app
+init_db()
 
 def calculate_betting_points(selected_players, leaderboard_df):
     points_summary = []
