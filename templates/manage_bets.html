@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Bets</title>
+    <link rel="stylesheet" 
+          href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .card {
+            background-color: #333333;
+            border-color: #444444;
+            margin-bottom: 15px;
+        }
+        .card-header {
+            background-color: #2d2d2d;
+            border-bottom: 1px solid #444444;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+        .btn-success {
+            background-color: #00bc8c;
+        }
+        input {
+            background-color: #444444 !important;
+            border-color: #555555 !important;
+            color: #ffffff !important;
+        }
+        input::placeholder {
+            color: #888888 !important;
+        }
+        .alert {
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .alert-error {
+            background-color: #e74c3c;
+            color: white;
+            padding: 15px;
+        }
+        .alert-success {
+            background-color: #00bc8c;
+            color: white;
+            padding: 15px;
+        }
+        .alert-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 300px;
+        }
+        .fade-out {
+            animation: fadeOut 5s;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="alert-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} fade-out">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container mt-4">
+        <div class="text-center mb-4">
+            <a href="/leaderboard" class="btn btn-primary mr-2">View Leaderboard</a>
+            <a href="/bet" class="btn btn-primary">View Betting Results</a>
+        </div>
+        
+        <h2 class="text-center mb-4">Manage Bets</h2>
+
+        <!-- Add New Entry Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Add New Bet</h4>
+            </div>
+            <div class="card-body">
+                <form action="/manage/add" method="POST">
+                    <div class="form-group">
+                        <label for="owner">Owner Name:</label>
+                        <input type="text" class="form-control" id="owner" name="owner" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="players">Players (comma-separated):</label>
+                        <input type="text" class="form-control" id="players" name="players" 
+                               placeholder="Player1, Player2, Player3, Player4, Player5" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Add Bet</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Current Entries -->
+        <h4 class="mb-3">Current Bets</h4>
+        {% for entry in entries %}
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">{{ entry.owner }}</h5>
+                        <p class="mb-0">Players: {{ entry.players|join(", ") }}</p>
+                    </div>
+                    <form action="/manage/remove" method="POST" style="display: inline;">
+                        <input type="hidden" name="owner" value="{{ entry.owner }}">
+                        <button type="submit" class="btn btn-danger">Remove</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    alert.style.display = 'none';
+                });
+            }, 5000);
+        });
+    </script>
+</body>
+</html> 

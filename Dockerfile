@@ -8,7 +8,10 @@ WORKDIR /app
 COPY . /app
 
 # Install dependencies
-RUN pip install --no-cache-dir flask pandas requests beautifulsoup4 gunicorn bs4
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create volume for SQLite database
+VOLUME /app/instance
 
 # Expose port 8080 for Cloud Run
 EXPOSE 8080
