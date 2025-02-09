@@ -174,5 +174,10 @@ def bet():
 
 if __name__ == "__main__":
     import os
-    port = int(os.environ.get("PORT", 8080))  # Default to 8080 if PORT is not set
-    app.run(host="0.0.0.0", port=port, debug=True)
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=8080, help="Port to run the server on")
+    args = parser.parse_args()
+
+    app.run(host="0.0.0.0", port=args.port, debug=True)
