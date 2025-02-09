@@ -2,8 +2,11 @@
 <html>
 <head>
     <title>Manage Bets</title>
-    <link rel="stylesheet" 
-          href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Add jQuery UI for autocomplete -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <style>
         body {
             background-color: #1a1a1a;
@@ -67,6 +70,47 @@
             70% { opacity: 1; }
             100% { opacity: 0; }
         }
+        .selected-players {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #444444;
+            border-radius: 5px;
+        }
+        .player-tag {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 2px;
+            background-color: #375a7f;
+            border-radius: 3px;
+            color: white;
+        }
+        .remove-player {
+            margin-left: 5px;
+            cursor: pointer;
+            color: #ff4444;
+        }
+        .ui-autocomplete {
+            background-color: #444444;
+            border: 1px solid #555555;
+            max-height: 200px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .ui-menu-item {
+            color: white;
+            padding: 5px 10px;
+        }
+        .ui-menu-item:hover {
+            background-color: #375a7f;
+        }
+        .ui-helper-hidden-accessible {
+            display: none;
+        }
+        #playerSearch {
+            background-color: #444444;
+            border-color: #555555;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -88,25 +132,26 @@
             <a href="/bet" class="btn btn-primary">View Betting Results</a>
         </div>
         
-        <h2 class="text-center mb-4">Manage Bets</h2>
+        <h2 class="text-center mb-4">Manage Betting Entries</h2>
 
-        <!-- Add New Entry Form -->
+        <!-- Modified Add New Entry Form -->
         <div class="card mb-4">
             <div class="card-header">
                 <h4>Add New Bet</h4>
             </div>
             <div class="card-body">
-                <form action="/manage/add" method="POST">
+                <form id="betForm" action="/manage/add" method="POST">
                     <div class="form-group">
                         <label for="owner">Owner Name:</label>
                         <input type="text" class="form-control" id="owner" name="owner" required>
                     </div>
                     <div class="form-group">
-                        <label for="players">Players (comma-separated):</label>
-                        <input type="text" class="form-control" id="players" name="players" 
-                               placeholder="Player1, Player2, Player3, Player4, Player5" required>
+                        <label for="playerSearch">Search Players:</label>
+                        <input type="text" class="form-control" id="playerSearch" placeholder="Type player name...">
+                        <div class="selected-players" id="selectedPlayers"></div>
+                        <input type="hidden" id="playersInput" name="players">
                     </div>
-                    <button type="submit" class="btn btn-success">Add Bet</button>
+                    <button type="submit" class="btn btn-success" id="submitBtn" disabled>Add Bet</button>
                 </form>
             </div>
         </div>
@@ -132,6 +177,64 @@
     </div>
 
     <script>
+        $(document).ready(function() {
+            let selectedPlayers = [];
+            
+            // Fetch players from the server
+            function updateAutocomplete() {
+                $.getJSON('/get_players', function(data) {
+                    $("#playerSearch").autocomplete({
+                        source: data,
+                        minLength: 2,
+                        select: function(event, ui) {
+                            addPlayer(ui.item.value);
+                            $(this).val('');
+                            return false;
+                        }
+                    });
+                });
+            }
+            
+            function addPlayer(player) {
+                if (selectedPlayers.length >= 5) {
+                    alert('Maximum 5 players allowed');
+                    return;
+                }
+                if (selectedPlayers.includes(player)) {
+                    alert('Player already selected');
+                    return;
+                }
+                
+                selectedPlayers.push(player);
+                updatePlayerTags();
+            }
+            
+            function updatePlayerTags() {
+                const container = $('#selectedPlayers');
+                container.empty();
+                
+                selectedPlayers.forEach(player => {
+                    container.append(`
+                        <span class="player-tag">
+                            ${player}
+                            <span class="remove-player" data-player="${player}">✕</span>
+                        </span>
+                    `);
+                });
+                
+                $('#playersInput').val(selectedPlayers.join(','));
+                $('#submitBtn').prop('disabled', selectedPlayers.length !== 5);
+            }
+            
+            $(document).on('click', '.remove-player', function() {
+                const player = $(this).data('player');
+                selectedPlayers = selectedPlayers.filter(p => p !== player);
+                updatePlayerTags();
+            });
+            
+            updateAutocomplete();
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');

@@ -132,6 +132,15 @@ def remove_bet():
     
     return redirect(url_for('manage_bets'))
 
+@app.route("/get_players")
+def get_players():
+    df = get_pga_leaderboard()
+    if df is None:
+        return jsonify([])
+    
+    players = df["Player"].tolist()
+    return jsonify(players)
+
 if __name__ == "__main__":
     import os
     import argparse
