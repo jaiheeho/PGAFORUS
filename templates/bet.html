@@ -31,6 +31,7 @@
                                 <th>Player</th>
                                 <th>Rank</th>
                                 <th>Total Score</th>
+                                <th>Today</th>
                                 <th>Round Scores</th>
                                 <th>Points</th>
                             </tr>
@@ -41,6 +42,7 @@
                                     <td>{{ player.Player }}</td>
                                     <td>{{ player.Rank }}</td>
                                     <td>{{ player.Total_Score }}</td>
+                                    <td>{{ player.Today }}</td>
                                     <td>{{ player.Round_Scores }}</td>
                                     <td class="{% if player.Points > 0 %}positive-points
                                                {% elif player.Points < 0 %}negative-points

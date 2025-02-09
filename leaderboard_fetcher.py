@@ -31,18 +31,19 @@ def get_pga_leaderboard():
     for player in leaderboard_data:
         player_info = player.get("player", {})
         scoring_data = player.get("scoringData", {})
-        
+
         rank = scoring_data.get("position", "N/A")
         name = player_info.get("displayName", "Unknown")
-        score = scoring_data.get("total", "N/A")
+        total = scoring_data.get("total", "N/A")
         thru = scoring_data.get("thru", "N/A")
+        today = scoring_data.get("score", "N/A")
         round_scores = scoring_data.get("rounds", [])
         
         leaderboard.append({
             "Rank": rank,
             "Player": name,
-            "Score": score,
-            "Total Score": score,
+            "Today": today,
+            "Total Score": total,
             "Round Scores": ", ".join(round_scores) if round_scores else "N/A"
         })
     

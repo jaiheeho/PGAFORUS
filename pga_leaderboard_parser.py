@@ -33,12 +33,14 @@ def calculate_betting_points(selected_players, leaderboard_df):
             points_summary.append({
                 "Player": player, 
                 "Rank": rank, 
-                "Total Score": player_row.iloc[0]["Total Score"],
-                "Round Scores": player_row.iloc[0]["Round Scores"],
+                "Today": player_row.iloc[0]["Today"],
+                "Total_Score": player_row.iloc[0]["Total Score"],
+                "Round_Scores": player_row.iloc[0]["Round Scores"],
                 "Points": player_points
             })
             total_points += player_points
     
+    points_summary.sort(key=lambda x: x["Rank"])  # Sort points_summary by Rank
     return {"total_points": total_points, "details": points_summary}
 
 @app.route("/")
