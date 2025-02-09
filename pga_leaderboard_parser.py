@@ -8,6 +8,7 @@ from flask import Flask, jsonify, render_template, render_template_string, reque
 from leaderboard_fetcher import get_pga_leaderboard
 from flask_sqlalchemy import SQLAlchemy
 from bet_data_base import db, BetEntry
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///bets.db'
@@ -17,6 +18,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = os.urandom(24)  # Generate a random secret key for better security
 
 db.init_app(app)
+migrate = Migrate(app, db)
 
 # Create tables
 with app.app_context():
@@ -75,7 +77,11 @@ def bet():
     if df is None:
         return jsonify({"error": "Failed to fetch leaderboard"}), 500
 
-    entries = BetEntry.query.all()
+    # Get entries where hidden is NULL or False
+    entries = BetEntry.query.filter(
+        (BetEntry.hidden.is_(None)) | (BetEntry.hidden == False)  # noqa: E712
+    ).all()
+    
     results = []
     for entry in entries:
         bet_result = calculate_betting_points(entry.players, df)
@@ -96,6 +102,8 @@ def manage_bets():
 def add_bet():
     owner = request.form.get('owner')
     players = [p.strip() for p in request.form.get('players').split(',')]
+    # Get hidden state from form checkbox
+    hidden = request.form.get('hidden') == 'on'  # Checkbox returns 'on' when checked
     
     if not owner:
         flash('Owner name is required!', 'error')
@@ -106,10 +114,10 @@ def add_bet():
         return redirect(url_for('manage_bets'))
     
     try:
-        bet_entry = BetEntry(owner=owner, players=players)
+        bet_entry = BetEntry(owner=owner, players=players, hidden=hidden)
         db.session.add(bet_entry)
         db.session.commit()
-        flash('Bet entry added successfully!', 'success')
+        flash(f'Bet entry added successfully!', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error adding bet: Owner name might already exist', 'error')
@@ -129,6 +137,27 @@ def remove_bet():
         except Exception as e:
             db.session.rollback()
             print(f"Error removing bet: {e}")
+    
+    return redirect(url_for('manage_bets'))
+
+@app.route("/manage/toggle_hidden", methods=["POST"])
+def toggle_hidden():
+    owner = request.form.get('owner')
+    if owner:
+        try:
+            bet_entry = BetEntry.query.filter_by(owner=owner).first()
+            if bet_entry:
+                # Toggle the hidden state
+                bet_entry.hidden = not bet_entry.hidden if bet_entry.hidden is not None else True
+                db.session.commit()
+                status = "hidden" if bet_entry.hidden else "visible"
+                flash(f'Bet is now {status}!', 'success')
+            else:
+                flash('Bet not found!', 'error')
+        except Exception as e:
+            db.session.rollback()
+            flash('Error updating visibility', 'error')
+            print(f"Error toggling hidden: {e}")
     
     return redirect(url_for('manage_bets'))
 
