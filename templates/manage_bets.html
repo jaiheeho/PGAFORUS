@@ -167,7 +167,7 @@
         {% for entry in entries %}
         <div class="card">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex flex-column">
                     <div>
                         <h5 class="mb-1">
                             {{ entry.owner }}
@@ -176,15 +176,15 @@
                             {% endif %}
                         </h5>
                         {% if not entry.hidden %}
-                            <p class="mb-0">Players: {{ entry.players|join(", ") }}</p>
+                            <p class="mb-2">{{ entry.players|join(", ") }}</p>
                         {% else %}
-                            <p class="mb-0 text-muted">Players hidden</p>
+                            <p class="mb-2 text-muted">Players hidden</p>
                         {% endif %}
                     </div>
-                    <div>
-                        <form action="/manage/toggle_hidden" method="POST" style="display: inline;">
+                    <div class="d-flex">
+                        <form action="/manage/toggle_hidden" method="POST" class="mr-2">
                             <input type="hidden" name="owner" value="{{ entry.owner }}">
-                            <button type="submit" class="btn btn-info mr-2">
+                            <button type="submit" class="btn btn-info" style="white-space: nowrap; min-width: 90px;">
                                 {% if entry.hidden %}
                                     Show Bet
                                 {% else %}
@@ -192,7 +192,7 @@
                                 {% endif %}
                             </button>
                         </form>
-                        <form action="/manage/remove" method="POST" style="display: inline;">
+                        <form action="/manage/remove" method="POST">
                             <input type="hidden" name="owner" value="{{ entry.owner }}">
                             <button type="submit" class="btn btn-danger">Remove</button>
                         </form>
