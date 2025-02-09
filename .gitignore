@@ -6,3 +6,6 @@ __pycache__/
 # Flask
 instance/
 .webassets-cache
+
+# Deploy script
+deploy.sh
