@@ -44,6 +44,20 @@
             background-color: #444444;
             border-color: #444444;
         }
+        td, th {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px; /* adjust as needed */
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .card-header h3 {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     </style>
 </head>
 <body>
@@ -65,34 +79,36 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Player</th>
-                                <th>Rank</th>
-                                <th>Total Score</th>
-                                <th>Today</th>
-                                <th>Round Scores</th>
-                                <th>Points</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for player in result.details %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
                                 <tr>
-                                    <td>{{ player.Player }}</td>
-                                    <td>{{ player.Rank }}</td>
-                                    <td>{{ player.Total_Score }}</td>
-                                    <td>{{ player.Today }}</td>
-                                    <td>{{ player.Round_Scores }}</td>
-                                    <td class="{% if player.Points > 0 %}positive-points
-                                               {% elif player.Points < 0 %}negative-points
-                                               {% else %}zero-points{% endif %}">
-                                        {{ player.Points }}
-                                    </td>
+                                    <th>Player</th>
+                                    <th>Rank</th>
+                                    <th>Total Score</th>
+                                    <th>Today</th>
+                                    <th>Round Scores</th>
+                                    <th>Points</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for player in result.details %}
+                                    <tr>
+                                        <td>{{ player.Player }}</td>
+                                        <td>{{ player.Rank }}</td>
+                                        <td>{{ player.Total_Score }}</td>
+                                        <td>{{ player.Today }}</td>
+                                        <td>{{ player.Round_Scores }}</td>
+                                        <td class="{% if player.Points > 0 %}positive-points
+                                                   {% elif player.Points < 0 %}negative-points
+                                                   {% else %}zero-points{% endif %}">
+                                            {{ player.Points }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         {% endfor %}
