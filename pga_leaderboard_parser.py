@@ -193,8 +193,12 @@ def get_players():
     if df is None:
         return jsonify([])
     
-    players = df["Player"].tolist()
-    return jsonify(players)
+    try:
+        players = df["Player"].tolist()
+        return jsonify(players)
+    except Exception as e:
+        print(f"Error getting players: {e}")
+        return jsonify([])
 
 if __name__ == "__main__":
     import os
