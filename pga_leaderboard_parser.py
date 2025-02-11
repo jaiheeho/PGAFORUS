@@ -108,9 +108,18 @@ def bet():
 @app.route("/manage")
 def manage_bets():
     entries = BetEntry.query.all()
-
-    upcoming_players = get_upcoming_players()
-
+    
+    # Get upcoming players with error handling
+    try:
+        upcoming_players = get_upcoming_players()
+        if upcoming_players is None:
+            # Create empty DataFrame if fetch fails
+            upcoming_players = pd.DataFrame(columns=['Player', 'PlayerURL'])
+            flash('Unable to fetch player list. Showing empty table.', 'error')
+    except Exception as e:
+        upcoming_players = pd.DataFrame(columns=['Player', 'PlayerURL'])
+        flash(f'Error fetching player list: {str(e)}', 'error')
+    
     return render_template('manage_bets.html', 
                          entries=entries,
                          upcoming_players=upcoming_players)
@@ -180,7 +189,7 @@ def toggle_hidden():
 
 @app.route("/get_players")
 def get_players():
-    df = get_pga_leaderboard()
+    df = get_upcoming_players()
     if df is None:
         return jsonify([])
     

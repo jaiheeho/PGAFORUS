@@ -10,29 +10,16 @@ COPY . /app
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright and its dependencies
+# Install Playwright with only Chromium
 RUN pip install playwright && \
-    playwright install && \
-    playwright install-deps && \
+    playwright install chromium && \
     apt-get update && \
     apt-get install -y \
+    libglib2.0-0 \
     libnss3 \
     libnspr4 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libdbus-1-3 \
-    libxkbcommon0 \
-    libatspi2.0-0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libasound2 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0
+    libxcb1 \
+    libdbus-1-3
 
 # Create volume for SQLite database
 VOLUME /app/instance
