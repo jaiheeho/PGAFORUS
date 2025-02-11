@@ -13,9 +13,10 @@ _cache = {
 }
 
 # Cache duration (in minutes)
-CACHE_DURATION = 3
+CACHE_DURATION = 120
 
 def should_refresh_cache():
+    return True
     if _cache['timestamp'] is None or _cache['data'] is None:
         return True
     
@@ -47,37 +48,49 @@ async def _fetch_upcoming_players():
             url = "https://www.pgatour.com/tournaments/2025/the-genesis-invitational/R2025007"
             await page.goto(url, wait_until="networkidle")
             await page.wait_for_load_state("domcontentloaded")
-            content = await page.content()
             
+            # Get table content with proper awaits
+            table_element = await page.query_selector("table")
+            if table_element:
+                inner_html = await table_element.inner_html()
+            else:
+                print("Error: Table element not found")
+
             await page.close()
             await context.close()
-            
-            soup = BeautifulSoup(content, 'html.parser')
-            player_pattern = re.compile(r'/player/\d+/[^/"]+')
-            player_links = soup.find_all('a', href=player_pattern)
-            
+
+            tr_regex = r'<tr[^>]*class="player-[^"]*"[^>]*>.*?</tr>'
+            tr_matches = re.findall(tr_regex, inner_html, re.DOTALL)
+
+
             players_data = []
-            for link in player_links:
-                href = link.get('href')
-                full_url = f"https://www.pgatour.com{href}" if href.startswith('/') else href
+
+            # Parse extracted <tr> rows with BeautifulSoup
+            for tr_html in tr_matches:
+                soup = BeautifulSoup(tr_html, "html.parser")
+                # Find all <a> tags with player URLs
+                player_links = soup.find_all('a', href=re.compile(r'/player/\d+/([^/]+)'))
                 
-                link_text = link.get_text().strip()
-                if ',' in link_text:
-                    last_name, first_name = link_text.split(',', 1)
-                    player_name = f"{first_name.strip()} {last_name.strip()}"
-                else:
-                    player_name = link_text
-                
-                if player_name:
-                    players_data.append({
-                        'Player': player_name,
-                        'PlayerURL': full_url
-                    })
+                for link in player_links:
+                    href = link.get('href')
+                    # Extract player name from URL using regex
+                    match = re.search(r'/player/\d+/([^/]+)', href)
+                    if match:
+                        player_slug = match.group(1)  # Gets 'ludvig-aberg' or 'daniel-berger'
+                        player_name = player_slug.replace('-', ' ').title()  # Convert to "Ludvig Aberg"
+                        full_url = f"https://www.pgatour.com{href}" if href.startswith('/') else href
+
+                        players_data.append({
+                            'Player': player_name,
+                            'PlayerURL': full_url
+                        })
             
             return pd.DataFrame(players_data)
 
         except Exception as e:
             print(f"Error: {str(e)}")
+            if browser:
+                await browser.close()
             return None
 
         finally:
@@ -93,11 +106,12 @@ def get_upcoming_players():
         print(f"Data cached at {_cache['timestamp']}")
     else:
         print(f"Using cached data from {_cache['timestamp']}")
+    
     print(_cache['data'])
     return _cache['data']
 
 if __name__ == "__main__":
-    df = get_page_content()
+    df = get_upcoming_players()
     if df is not None:
         print("\nDataFrame Preview:")
         print(df.head())
