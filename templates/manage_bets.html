@@ -111,6 +111,31 @@
             border-color: #555555;
             color: white;
         }
+        .section-divider {
+            margin: 40px 0;
+            border-top: 1px solid #444444;
+        }
+        .player-link {
+            color: #00bc8c;
+            text-decoration: none;
+        }
+        .player-link:hover {
+            color: #00efb2;
+            text-decoration: underline;
+        }
+        .table {
+            color: #ffffff !important;
+        }
+        .table td, .table th {
+            color: #ffffff !important;
+            border-color: #444444;
+        }
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: #333333;
+        }
+        .table-striped tbody tr:nth-of-type(even) {
+            background-color: #2d2d2d;
+        }
     </style>
 </head>
 <body>
@@ -201,6 +226,32 @@
             </div>
         </div>
         {% endfor %}
+
+        <!-- Upcoming Players Section -->
+        <div class="section-divider"></div>
+        <h4 class="mb-3">Upcoming Players</h4>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Profile</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for _, row in upcoming_players.iterrows() %}
+                    <tr>
+                        <td>{{ row.Player }}</td>
+                        <td>
+                            <a href="{{ row.PlayerURL }}" 
+                               class="player-link" 
+                               target="_blank">View Profile</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>

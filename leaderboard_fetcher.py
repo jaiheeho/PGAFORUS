@@ -39,6 +39,9 @@ def get_pga_leaderboard():
         today = scoring_data.get("score", "N/A")
         round_scores = scoring_data.get("rounds", [])
         
+
+        if(name == "Thomas Detry"):
+            print (player)
         # Skip players with N/A or Unknown values
         if name == "Unknown" or rank == "N/A" or total == "N/A":
             continue

@@ -6,6 +6,7 @@ import os
 from bs4 import BeautifulSoup
 from flask import Flask, jsonify, render_template, render_template_string, request, redirect, url_for, flash
 from leaderboard_fetcher import get_pga_leaderboard
+from upcoming_players_fetcher import get_upcoming_players
 from flask_sqlalchemy import SQLAlchemy
 from bet_data_base import db, BetEntry
 from flask_migrate import Migrate
@@ -84,8 +85,8 @@ def leaderboard():
 
 @app.route("/bet", methods=["GET"])
 def bet():
-    df = get_pga_leaderboard()
-    if df is None:
+    leaderboard = get_pga_leaderboard()
+    if leaderboard is None:
         return jsonify({"error": "Failed to fetch leaderboard"}), 500
 
     # Get entries where hidden is NULL or False
@@ -95,7 +96,7 @@ def bet():
     
     results = []
     for entry in entries:
-        bet_result = calculate_betting_points(entry.players, df)
+        bet_result = calculate_betting_points(entry.players, leaderboard)
         results.append({
             "owner": entry.owner,
             "total_points": bet_result["total_points"],
@@ -107,7 +108,12 @@ def bet():
 @app.route("/manage")
 def manage_bets():
     entries = BetEntry.query.all()
-    return render_template('manage_bets.html', entries=entries)
+
+    upcoming_players = get_upcoming_players()
+
+    return render_template('manage_bets.html', 
+                         entries=entries,
+                         upcoming_players=upcoming_players)
 
 @app.route("/manage/add", methods=["POST"])
 def add_bet():
