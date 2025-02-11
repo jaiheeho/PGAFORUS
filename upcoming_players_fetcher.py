@@ -45,11 +45,14 @@ async def _fetch_upcoming_players():
         
         try:
             page = await context.new_page()
+            
+            # Navigate to page and wait for content
             url = "https://www.pgatour.com/tournaments/2025/the-genesis-invitational/R2025007"
+            
+            # Wait for specific elements to be loaded
             await page.goto(url, wait_until="networkidle")
             await page.wait_for_load_state("domcontentloaded")
             
-            # Get table content with proper awaits
             table_element = await page.query_selector("table")
             if table_element:
                 inner_html = await table_element.inner_html()
@@ -64,38 +67,34 @@ async def _fetch_upcoming_players():
 
 
             players_data = []
-
-            # Parse extracted <tr> rows with BeautifulSoup
             for tr_html in tr_matches:
                 soup = BeautifulSoup(tr_html, "html.parser")
-                # Find all <a> tags with player URLs
                 player_links = soup.find_all('a', href=re.compile(r'/player/\d+/([^/]+)'))
                 
                 for link in player_links:
                     href = link.get('href')
-                    # Extract player name from URL using regex
                     match = re.search(r'/player/\d+/([^/]+)', href)
                     if match:
-                        player_slug = match.group(1)  # Gets 'ludvig-aberg' or 'daniel-berger'
-                        player_name = player_slug.replace('-', ' ').title()  # Convert to "Ludvig Aberg"
-                        full_url = f"https://www.pgatour.com{href}" if href.startswith('/') else href
-
+                        player_slug = match.group(1)
+                        player_name = player_slug.replace('-', ' ').title()
+                        print(f"Found player: {player_name} (URL: {href})")
                         players_data.append({
                             'Player': player_name,
-                            'PlayerURL': full_url
+                            'PlayerURL': f"https://www.pgatour.com{href}"
                         })
             
             return pd.DataFrame(players_data)
-
+            
         except Exception as e:
             print(f"Error: {str(e)}")
-            if browser:
-                await browser.close()
-            return None
-
+            return pd.DataFrame(columns=['Player', 'PlayerURL'])
+            
         finally:
-            if browser:
-                await browser.close()
+            if 'page' in locals():
+                await page.close()
+            if 'context' in locals():
+                await context.close()
+            await browser.close()
 
 def get_upcoming_players():
     """Get player data from cache or fetch if needed"""
