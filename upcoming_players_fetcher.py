@@ -25,7 +25,6 @@ logging.basicConfig(
 logger = logging.getLogger('upcoming_players_fetcher')
 
 def should_refresh_cache():
-    return True
     if _cache['timestamp'] is None or _cache['data'] is None:
         return True
     
@@ -131,7 +130,7 @@ async def _fetch_upcoming_players():
                             logger.debug(f"Found player: {player_name}")
                             players_data.append({
                                 'Player': player_name,
-                                'PlayerURL': f"https://www.pgatour.com{href}"
+                                'PlayerURL': f"https://www.pgatour.com/{match.group().lstrip('/')}"
                             })
                 except Exception as e:
                     logger.error(f"Error processing player row {idx}: {str(e)}")

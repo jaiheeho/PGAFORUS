@@ -6,3 +6,7 @@ gunicorn
 flask-sqlalchemy
 flask-migrate
 playwright 
+cloud-sql-python-connector>=1.2.0
+pg8000==1.30.3
+SQLAlchemy>=2.0.0
+Flask-SQLAlchemy>=3.0.0

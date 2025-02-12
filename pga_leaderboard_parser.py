@@ -9,32 +9,47 @@ from leaderboard_fetcher import get_pga_leaderboard
 from upcoming_players_fetcher import get_upcoming_players
 from flask_sqlalchemy import SQLAlchemy
 from bet_data_base import db, BetEntry
-from flask_migrate import Migrate
+import logging
+from google.cloud.sql.connector import Connector
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///bets.db'
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# Initialize Cloud SQL Python Connector
+connector = Connector()
+
+def getconn():
+    conn = connector.connect(
+        instance_connection_name,
+        "pg8000",
+        user=db_user,
+        password=db_pass,
+        db=db_name,
+    )
+    return conn
+
+# Configure SQLAlchemy with the connector
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql+pg8000://"
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "creator": getconn,
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# The secret key is essential for session management and security in Flask applications.
-# It is used to sign session cookies and protect against certain attacks.
-app.secret_key = os.urandom(24)  # Generate a random secret key for better security
+app.secret_key = os.urandom(24)
 
+# Log the configuration
+logger.info(f"Connecting to instance: {instance_connection_name}")
+logger.info(f"Using database: {db_name}")
+logger.info(f"Using pg8000 as database driver")
+
+# Initialize database
 db.init_app(app)
-migrate = Migrate(app, db)
 
-# Add this function
-def init_db():
-    with app.app_context():
-        try:
-            # Create tables if they don't exist
-            db.create_all()
-            # Run migrations
-            from flask_migrate import upgrade
-            upgrade()
-        except Exception as e:
-            print(f"Database initialization error: {e}")
-
-# Call init_db() when starting the app
-init_db()
+# Create tables
+with app.app_context():
+    db.create_all()
 
 def calculate_betting_points(selected_players, leaderboard_df):
     points_summary = []

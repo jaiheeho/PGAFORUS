@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 
+# Initialize SQLAlchemy instance
 db = SQLAlchemy()
 
 class BetEntry(db.Model):
