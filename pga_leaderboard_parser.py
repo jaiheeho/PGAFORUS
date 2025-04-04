@@ -21,6 +21,13 @@ logger = logging.getLogger(__name__)
 # Initialize Cloud SQL Python Connector
 connector = Connector()
 
+
+# Database configuration
+db_user = os.environ.get("DB_USER")
+db_pass = os.environ.get("DB_PASS")
+db_name = os.environ.get("DB_NAME")
+instance_connection_name = os.environ.get("INSTANCE_CONNECTION_NAME")
+
 def getconn():
     conn = connector.connect(
         instance_connection_name,
@@ -61,16 +68,18 @@ def calculate_betting_points(selected_players, leaderboard_df):
         
         if not player_row.empty:
             rank = player_row.iloc[0]["Rank"]
-            rank_cleaned = ''.join(filter(str.isdigit, rank))
-            
-            if rank_cleaned.isdigit():
-                rank_num = int(rank_cleaned)
-                if rank_num == 1:
-                    player_points = 3
-                elif rank_num <= 10:
-                    player_points = 1
-                elif rank_num >= 31:
-                    player_points = -1
+            if rank in ['CUT', 'WD']:
+                player_points = -1
+            else:
+                rank_cleaned = ''.join(filter(str.isdigit, rank))
+                if rank_cleaned.isdigit():
+                    rank_num = int(rank_cleaned)
+                    if rank_num == 1:
+                        player_points = 3
+                    elif rank_num <= 10:
+                        player_points = 1
+                    elif rank_num >= 31:
+                        player_points = -1
             
             points_summary.append({
                 "Player": player, 
@@ -125,16 +134,18 @@ def manage_bets():
     entries = BetEntry.query.all()
     
     # Get upcoming players with error handling
-    try:
-        upcoming_players = get_upcoming_players()
-        if upcoming_players is None:
-            # Create empty DataFrame if fetch fails
-            upcoming_players = pd.DataFrame(columns=['Player', 'PlayerURL'])
-            flash('Unable to fetch player list. Showing empty table.', 'error')
-    except Exception as e:
-        upcoming_players = pd.DataFrame(columns=['Player', 'PlayerURL'])
-        flash(f'Error fetching player list: {str(e)}', 'error')
-    
+    # try:
+    #     upcoming_players = get_upcoming_players()
+    #     if upcoming_players is None:
+    #         # Create empty DataFrame if fetch fails
+    #         upcoming_players = pd.DataFrame(columns=['Player', 'PlayerURL'])
+    #         flash('Unable to fetch player list. Showing empty table.', 'error')
+    # except Exception as e:
+    #     upcoming_players = pd.DataFrame(columns=['Player', 'PlayerURL'])
+    #     flash(f'Error fetching player list: {str(e)}', 'error')
+
+    upcoming_players = get_upcoming_players()
+
     return render_template('manage_bets.html', 
                          entries=entries,
                          upcoming_players=upcoming_players)
@@ -204,7 +215,9 @@ def toggle_hidden():
 
 @app.route("/get_players")
 def get_players():
+    # df = get_upcoming_players()
     df = get_upcoming_players()
+
     if df is None:
         return jsonify([])
     
