@@ -1,6 +1,0 @@
-{
-  "installCommand": "cd pga-nextjs && npm install",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "rootDirectory": "pga-nextjs"
-} 
