@@ -68,18 +68,20 @@ def calculate_betting_points(selected_players, leaderboard_df):
         
         if not player_row.empty:
             rank = player_row.iloc[0]["Rank"]
-            if rank in ['CUT', 'WD']:
+            if rank in ['CUT', 'WD', 'DQ']:
                 player_points = -1
             else:
                 rank_cleaned = ''.join(filter(str.isdigit, rank))
                 if rank_cleaned.isdigit():
                     rank_num = int(rank_cleaned)
                     if rank_num == 1:
-                        player_points = 3
+                        player_points = 3  # Winner takes all
                     elif rank_num <= 10:
-                        player_points = 1
-                    elif rank_num >= 31:
-                        player_points = -1
+                        player_points = 1  # Top 10 - Solid performance
+                    elif rank_num <= 30:
+                        player_points = 0  # 11th-30th - No points awarded
+                    else:
+                        player_points = -1  # 31+ - Poor performance
             
             points_summary.append({
                 "Player": player, 

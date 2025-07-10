@@ -18,7 +18,10 @@ def get_upcoming_players():
         return None
     
     try:
-        json_data = json.loads(script_tag.string)
+        script_content = script_tag.get_text()
+        if not script_content:
+            return None
+        json_data = json.loads(script_content)
     except json.JSONDecodeError:
         return None
     
@@ -32,15 +35,16 @@ def get_upcoming_players():
         player_info = player.get("player", {})
         scoring_data = player.get("scoringData", {})
 
-        rank = scoring_data.get("position", "N/A")
+        # Use POS field instead of position
+        rank = scoring_data.get("POS", scoring_data.get("pos", "-"))
         name = player_info.get("displayName", "Unknown")
         total = scoring_data.get("total", "N/A")
         thru = scoring_data.get("thru", "N/A")
         today = scoring_data.get("score", "N/A")
         round_scores = scoring_data.get("rounds", [])
         
-        # Skip players with N/A or Unknown values
-        if name == "Unknown" or rank == "N/A" or total == "N/A":
+        # Skip players with Unknown names, but allow rank "-" since that's valid for pre-tournament
+        if name == "Unknown":
             continue
         
         leaderboard.append({
