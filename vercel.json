@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd pga-nextjs && npm run build",
+  "installCommand": "cd pga-nextjs && npm install",
+  "outputDirectory": "pga-nextjs/.next",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
+    }
+  ]
+} 
