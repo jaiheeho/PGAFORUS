@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config) => {
+    // Ensure the `@/` alias always points to the `src` directory
+    config.resolve.alias['@'] = require('path').resolve(__dirname, 'src');
+    return config;
+  },
 };
 
 export default nextConfig;
