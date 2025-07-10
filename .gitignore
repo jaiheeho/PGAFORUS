@@ -1,16 +1,136 @@
-# Ignore Python cache
+# Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # Flask
 instance/
 migrations/
 .webassets-cache
 
-# Deploy script
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.yarn-integrity
 
-deploy.sh
+# Next.js (in case of nested projects)
+.next/
+out/
+build/
 
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
+# Environment files
+.env*
+!.env.example
+*.env
+
+# Database and credentials
+*.json
+!package*.json
+!tsconfig*.json
 pga-for-us-934371466598.json
+
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+*.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Large HTML files (likely temporary/generated)
+*.html
+!templates/*.html
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cloud SQL Proxy and other binaries
+cloud-sql-proxy
+*.exe
+*.bin
+
+# Deployment files
+deploy.sh
+docker-compose.override.yml
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+.nyc_output
+.coverage
+
+# Misc
+*.tgz
+*.tar.gz
+.yarnrc.yml
