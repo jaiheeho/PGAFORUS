@@ -62,11 +62,6 @@ pnpm-lock.yaml
 *.json
 !package*.json
 !tsconfig*.json
-!vercel.json
-!next.config.ts
-!tailwind.config.ts
-!eslint.config.mjs
-!postcss.config.mjs
 pga-for-us-934371466598.json
 
 # System files
