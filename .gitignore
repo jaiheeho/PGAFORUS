@@ -135,11 +135,5 @@ docker-compose.override.yml
 *.tar.gz
 .yarnrc.yml
 
-# Root level symbolic links (created for Vercel compatibility)
-# These are symlinks to pga-nextjs/src/* - keep them in git
-# but document them here for clarity
-# /app -> pga-nextjs/src/app
-# /src -> pga-nextjs/src
-
 # Vercel
 .vercel
