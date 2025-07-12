@@ -96,10 +96,26 @@ export async function GET(request: NextRequest) {
 
       const totalPoints = playerResults.reduce((sum, player) => sum + player.Points, 0);
 
+      // Find the best performing player (lowest rank number, excluding CUT/WD/DQ)
+      const validPlayers = playerResults.filter(p => !['CUT', 'WD', 'DQ'].includes(p.Rank));
+      let bestPlayer = validPlayers.length > 0 ? validPlayers[0] : playerResults[0];
+      
+      for (const player of validPlayers) {
+        const playerRank = parseInt(player.Rank);
+        const bestRank = parseInt(bestPlayer.Rank);
+        
+        if (!isNaN(playerRank) && !isNaN(bestRank) && playerRank < bestRank) {
+          bestPlayer = player;
+        }
+      }
+
       return {
         owner: bet.user_name || bet.owner || session.user?.name || `Bet #${index + 1}`,
         total_points: totalPoints,
-        details: playerResults
+        details: playerResults,
+        best_position: parseInt(bestPlayer.Rank) || 999,
+        best_player: bestPlayer.Player,
+        best_rank: bestPlayer.Rank
       };
     });
 
