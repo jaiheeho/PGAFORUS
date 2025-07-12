@@ -21,7 +21,16 @@ interface DraftBet {
 
 export default function LeaderboardPage() {
   const { data: session, status } = useSession();
-  const { data, error, isLoading, mutate } = useSWR<LeaderboardData>('/api/leaderboard', fetcher);
+  const { data, error, isLoading, mutate } = useSWR<LeaderboardData>(
+    '/api/leaderboard',
+    (url) => fetch(`${url}?cb=${Date.now()}`).then(res => res.json()),
+    {
+      refreshInterval: 1800000, // Refresh every 30 minutes
+      revalidateOnFocus: true, // Refresh when window gets focus
+      revalidateOnReconnect: true, // Refresh when network reconnects
+      dedupingInterval: 300000, // Prevent duplicate requests within 5 minutes
+    }
+  );
   const { data: draftBet, mutate: mutateDraft } = useSWR<DraftBet | null>(
     session ? '/api/draft-bet' : null,
     fetcher
@@ -145,18 +154,24 @@ export default function LeaderboardPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Tournament Leaderboard</h1>
             {data && (
-              <p className="text-sm text-slate-600">
-                Last updated: {new Date(data.lastUpdated).toLocaleTimeString()}
-              </p>
+              <div className="space-y-1">
+                <p className="text-sm text-slate-600">
+                  Last updated: {new Date(data.lastUpdated).toLocaleTimeString()}
+                </p>
+                <p className="text-xs text-slate-500">
+                  Auto-refreshes every 30 minutes
+                </p>
+              </div>
             )}
           </div>
         </div>
         <button
           onClick={() => mutate()}
-          className="flex items-center space-x-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
+          disabled={isLoading}
+          className="flex items-center space-x-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-50"
         >
-          <RefreshCw className="w-4 h-4" />
-          <span>Refresh</span>
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
         </button>
       </div>
 
@@ -233,19 +248,19 @@ export default function LeaderboardPage() {
           {isLoading ? (
             <LoadingSpinner className="py-8" />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {data?.players.map((player, index) => (
                 <div
                   key={index}
-                  className={`flex items-center justify-between p-4 rounded-xl transition-colors ${
+                  className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
                     isPlayerSelected(player.Player)
                       ? 'bg-primary-50 border border-primary-200'
                       : 'bg-slate-50 hover:bg-slate-100 border border-slate-200'
                   }`}
                 >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-300 shadow-sm">
-                      <span className={`text-lg font-bold ${getRankColor(player.Rank)}`}>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-slate-300 shadow-sm">
+                      <span className={`text-sm font-bold ${getRankColor(player.Rank)}`}>
                         {player.Rank}
                       </span>
                     </div>
@@ -262,17 +277,17 @@ export default function LeaderboardPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-6 text-right">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 text-right">
                       <div>
-                        <p className="text-sm text-slate-600 font-medium">Total</p>
-                        <p className="text-lg font-semibold text-slate-900">
+                        <p className="text-xs text-slate-600 font-medium">Total</p>
+                        <p className="text-sm font-semibold text-slate-900">
                           {player['Total Score']}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-600 font-medium">Today</p>
-                        <p className={`text-lg font-semibold ${getTodayColor(player.Today)}`}>
+                        <p className="text-xs text-slate-600 font-medium">Today</p>
+                        <p className={`text-sm font-semibold ${getTodayColor(player.Today)}`}>
                           {player.Today}
                         </p>
                       </div>
@@ -285,7 +300,7 @@ export default function LeaderboardPage() {
                         size="sm"
                         onClick={() => handlePlayerToggle(player.Player)}
                         disabled={isUpdating || (!isPlayerSelected(player.Player) && !canAddPlayers)}
-                        className={`ml-4 transition-all font-medium ${
+                        className={`ml-4 transition-all font-medium w-8 h-8 p-1 ${
                           isPlayerSelected(player.Player)
                             ? 'text-red-700 border-red-400 hover:bg-red-50 bg-white'
                             : !canAddPlayers
@@ -294,11 +309,11 @@ export default function LeaderboardPage() {
                         }`}
                       >
                         {isUpdating ? (
-                          <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          <div className="w-3 h-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                         ) : isPlayerSelected(player.Player) ? (
-                          <X className="w-4 h-4 text-red-700" />
+                          <X className="w-3 h-3 text-red-700" />
                         ) : (
-                          <Plus className="w-4 h-4 text-black" />
+                          <Plus className="w-3 h-3 text-black" />
                         )}
                       </Button>
                     )}
