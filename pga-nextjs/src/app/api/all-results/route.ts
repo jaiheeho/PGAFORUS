@@ -14,7 +14,13 @@ function calculatePoints(rank: string): number {
     return -1;
   }
   
-  const numericRank = parseInt(rank);
+  // Handle tied ranks by removing the 'T' prefix
+  let rankStr = rank;
+  if (rankStr.startsWith('T')) {
+    rankStr = rankStr.substring(1);
+  }
+  
+  const numericRank = parseInt(rankStr);
   if (isNaN(numericRank)) {
     return 0;
   }
@@ -52,6 +58,21 @@ export async function GET(request: NextRequest) {
       console.log('Could not fetch leaderboard data:', error);
     }
 
+    // Helper function to get numeric rank for sorting
+    const getNumericRank = (rank: string): number => {
+      if (rank === 'CUT' || rank === 'WD' || rank === 'DQ') {
+        return 999; // Put cut players at the bottom
+      }
+      
+      let rankStr = rank;
+      if (rankStr.startsWith('T')) {
+        rankStr = rankStr.substring(1);
+      }
+      
+      const numericRank = parseInt(rankStr);
+      return isNaN(numericRank) ? 999 : numericRank;
+    };
+
     // Calculate results for each bet
     const results: BetResult[] = (allBets || []).map((bet, index) => {
       const playerResults: PlayerResult[] = bet.players.map((playerName: string) => {
@@ -78,16 +99,32 @@ export async function GET(request: NextRequest) {
       });
 
       const totalPoints = playerResults.reduce((sum, player) => sum + player.Points, 0);
+      
+      // Find the best current tournament position for this team
+      const bestPosition = Math.min(...playerResults.map(p => getNumericRank(p.Rank)));
+      
+      // Find the best performing player name for display
+      const bestPlayer = playerResults.find(p => getNumericRank(p.Rank) === bestPosition);
 
       return {
         owner: bet.user_nickname || `Player #${index + 1}`,
         total_points: totalPoints,
-        details: playerResults
+        details: playerResults,
+        best_position: bestPosition,
+        best_player: bestPlayer?.Player || '',
+        best_rank: bestPlayer?.Rank || 'CUT'
       };
     });
 
-    // Sort by total points (highest first)
-    results.sort((a, b) => b.total_points - a.total_points);
+    // Sort by current tournament position first (best position = lowest rank), then by points
+    results.sort((a, b) => {
+      // Primary sort: best tournament position (lower rank number = better)
+      if (a.best_position !== b.best_position) {
+        return a.best_position - b.best_position;
+      }
+      // Secondary sort: total fantasy points (higher = better)
+      return b.total_points - a.total_points;
+    });
 
     return NextResponse.json(results);
   } catch (error) {

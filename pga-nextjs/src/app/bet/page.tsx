@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { Card, CardHeader, CardContent, LoadingSpinner, Badge, PlayerCard, Button } from '@/components/ui';
 import { BarChart3, Trophy, Medal, Award, ChevronDown, ChevronUp } from 'lucide-react';
@@ -9,10 +9,42 @@ import { getPointsBadgeVariant } from '@/lib/utils';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+// Helper function to detect if tournament has started
+const isTournamentStarted = (results: BetResult[]): boolean => {
+  if (!results || results.length === 0) return false;
+  
+  // Check if any player has scoring data that indicates tournament has started
+  return results.some(result => 
+    result.details.some(player => 
+      player.Today !== 'E' || 
+      player.Total_Score !== 'E' || 
+      (player.Round_Scores !== 'Tournament hasn\'t started' && player.Round_Scores !== 'N/A')
+    )
+  );
+};
+
 export default function BetPage() {
   const [expandedBets, setExpandedBets] = useState<Set<string>>(new Set());
   
-  const { data: results, error, isLoading } = useSWR<BetResult[]>('/api/all-results', fetcher);
+  // SWR with auto-refresh and cache-busting
+  const { data: results, error, isLoading, mutate } = useSWR<BetResult[]>(
+    '/api/all-results', 
+    (url) => fetch(`${url}?cb=${Date.now()}`).then(res => res.json()),
+    {
+      refreshInterval: 1800000, // Refresh every 30 minutes
+      revalidateOnFocus: true, // Refresh when window gets focus
+      revalidateOnReconnect: true, // Refresh when network reconnects
+      dedupingInterval: 300000, // Prevent duplicate requests within 5 minutes
+    }
+  );
+
+  // Auto-expand all dropdowns by default when data loads
+  useEffect(() => {
+    if (results && results.length > 0) {
+      const allOwners = new Set(results.map(result => result.owner));
+      setExpandedBets(allOwners);
+    }
+  }, [results]);
 
   const toggleBetExpansion = (owner: string) => {
     setExpandedBets(prev => {
@@ -37,21 +69,41 @@ export default function BetPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center space-x-3">
-        <div className="w-10 h-10 bg-success-100 rounded-xl flex items-center justify-center">
-          <BarChart3 className="w-5 h-5 text-success-600" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-success-100 rounded-xl flex items-center justify-center">
+            <BarChart3 className="w-5 h-5 text-success-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">PGA Betting Results</h1>
+            <p className="text-gray-600">All players' fantasy points and performance</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">PGA Betting Results</h1>
-          <p className="text-gray-600">All players' fantasy points and performance</p>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => mutate()}
+          disabled={isLoading}
+          className="flex items-center space-x-2"
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
+        </Button>
       </div>
 
       {/* Current Standings with Dropdown Functionality */}
       {results && !isLoading && (
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">Current Standings</h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Current Standings</h2>
+                <p className="text-xs text-gray-500">Sorted by best tournament position, then by fantasy points</p>
+              </div>
+              <p className="text-xs text-gray-500">
+                Auto-refreshes every 30 minutes • Last updated: {new Date().toLocaleTimeString()}
+              </p>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -74,7 +126,14 @@ export default function BetPage() {
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{result.owner}</p>
-                        <p className="text-sm text-gray-600">{result.details.length} players</p>
+                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                          <span>{result.details.length} players</span>
+                          {result.best_position < 999 && (
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              Best: #{result.best_rank} ({result.best_player})
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
@@ -85,13 +144,13 @@ export default function BetPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => toggleBetExpansion(result.owner)}
-                        className="flex items-center space-x-1"
+                        className="flex items-center space-x-1 px-2 py-1 text-xs h-6"
                       >
-                        <span>{expandedBets.has(result.owner) ? 'Hide' : 'Show'} Players</span>
+                        <span className="text-xs">{expandedBets.has(result.owner) ? 'Hide' : 'Show'}</span>
                         {expandedBets.has(result.owner) ? (
-                          <ChevronUp className="w-4 h-4" />
+                          <ChevronUp className="w-3 h-3" />
                         ) : (
-                          <ChevronDown className="w-4 h-4" />
+                          <ChevronDown className="w-3 h-3" />
                         )}
                       </Button>
                     </div>

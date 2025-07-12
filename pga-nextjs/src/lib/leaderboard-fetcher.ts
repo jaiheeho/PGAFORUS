@@ -75,13 +75,16 @@ export async function fetchPGALeaderboard(): Promise<PGALeaderboardResponse | nu
       'Accept-Encoding': 'gzip, deflate, br',
       'DNT': '1',
       'Connection': 'keep-alive',
-      'Upgrade-Insecure-Requests': '1'
+      'Upgrade-Insecure-Requests': '1',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache'
     };
 
     // Try multiple URLs to get complete player data
+    const cacheBuster = `?cb=${Date.now()}`;
     const urlsToTry = [
-      'https://www.pgatour.com/leaderboard',  // Try leaderboard page first
-      'https://www.pgatour.com/',             // Homepage as fallback
+      `https://www.pgatour.com/leaderboard${cacheBuster}`,  // Try leaderboard page first
+      `https://www.pgatour.com/${cacheBuster}`,             // Homepage as fallback
     ];
 
     for (const url of urlsToTry) {
@@ -169,7 +172,7 @@ function extractPlayersFromDehydratedState(dehydratedState: DehydratedStateData,
       // Check for field data (complete tournament field)
       if (queryData?.field?.players) {
         console.log(`🎯 Found field players in query ${i + 1}: ${queryData.field.players.length} players`);
-        const fieldPlayers = parsePlayersArray(queryData.field.players, tournamentName, true);
+        const fieldPlayers = parsePlayersArray(queryData.field.players, tournamentName, false);
         if (fieldPlayers.length > allPlayersFound.length) {
           allPlayersFound = fieldPlayers;
         }
@@ -178,7 +181,7 @@ function extractPlayersFromDehydratedState(dehydratedState: DehydratedStateData,
       // Check for players array directly
       if (queryData?.players && Array.isArray(queryData.players)) {
         console.log(`🎯 Found players array in query ${i + 1}: ${queryData.players.length} players`);
-        const players = parsePlayersArray(queryData.players, tournamentName, true);
+        const players = parsePlayersArray(queryData.players, tournamentName, false);
         if (players.length > allPlayersFound.length) {
           allPlayersFound = players;
         }
@@ -187,7 +190,7 @@ function extractPlayersFromDehydratedState(dehydratedState: DehydratedStateData,
       // Check for tournament participants
       if (queryData?.participants && Array.isArray(queryData.participants)) {
         console.log(`🎯 Found participants in query ${i + 1}: ${queryData.participants.length} players`);
-        const participants = parsePlayersArray(queryData.participants, tournamentName, true);
+        const participants = parsePlayersArray(queryData.participants, tournamentName, false);
         if (participants.length > allPlayersFound.length) {
           allPlayersFound = participants;
         }
@@ -197,7 +200,7 @@ function extractPlayersFromDehydratedState(dehydratedState: DehydratedStateData,
       if (queryData?.tournament?.field) {
         console.log(`🎯 Found tournament.field in query ${i + 1}`);
         if (Array.isArray(queryData.tournament.field)) {
-          const tournamentField = parsePlayersArray(queryData.tournament.field, tournamentName, true);
+          const tournamentField = parsePlayersArray(queryData.tournament.field, tournamentName, false);
           if (tournamentField.length > allPlayersFound.length) {
             allPlayersFound = tournamentField;
           }
@@ -207,7 +210,7 @@ function extractPlayersFromDehydratedState(dehydratedState: DehydratedStateData,
       // Check for any other arrays that might contain player data
       if (queryData?.data && Array.isArray(queryData.data)) {
         console.log(`🎯 Found data array in query ${i + 1}: ${queryData.data.length} items`);
-        const dataPlayers = parsePlayersArray(queryData.data, tournamentName, true);
+        const dataPlayers = parsePlayersArray(queryData.data, tournamentName, false);
         if (dataPlayers.length > allPlayersFound.length) {
           allPlayersFound = dataPlayers;
         }
@@ -250,6 +253,14 @@ function parsePlayersArray(playersData: unknown[], tournamentName: string, isPre
       console.log(`🔍 Player ${i + 1} (${name}) data structure:`, {
         playerData_keys: Object.keys(playerData || {}),
         scoring_keys: Object.keys(scoring || {}),
+        score_values: {
+          'scoring.score': scoring?.score,
+          'scoring.today': scoring?.today,
+          'scoring.total': scoring?.total,
+          'scoring.totalScore': scoring?.totalScore,
+          'playerData.total': playerData?.total,
+          'playerData.totalScore': playerData?.totalScore,
+        },
         POS_values: {
           'scoring.POS': (scoring as any)?.POS,
           'scoring.pos': (scoring as any)?.pos,
@@ -282,11 +293,21 @@ function parsePlayersArray(playersData: unknown[], tournamentName: string, isPre
       (isPreTournament ? i + 1 : '-')  // Only use array index as last resort
     );
     
-    const today = isPreTournament ? 'E' : formatScore(scoring?.score || scoring?.today || 0);
-    const total = isPreTournament ? 'E' : formatScore(scoring?.total || scoring?.totalScore || 0);
-    const rounds = isPreTournament ? 
-                   'Tournament hasn\'t started' : 
-                   (scoring?.rounds || playerData?.rounds || []).join(', ') || 'N/A';
+    // Check if tournament has actually started by looking for score data
+    const hasScoreData = scoring?.score !== undefined || 
+                        scoring?.today !== undefined || 
+                        scoring?.total !== undefined || 
+                        scoring?.totalScore !== undefined ||
+                        playerData?.total !== undefined ||
+                        playerData?.totalScore !== undefined;
+    
+    const actuallyStarted = hasScoreData && !isPreTournament;
+    
+    const today = actuallyStarted ? formatScore(scoring?.score || scoring?.today || 0) : 'E';
+    const total = actuallyStarted ? formatScore(scoring?.total || scoring?.totalScore || playerData?.total || playerData?.totalScore || 0) : 'E';
+    const rounds = actuallyStarted ? 
+                   (scoring?.rounds || playerData?.rounds || []).join(', ') || 'N/A' :
+                   'Tournament hasn\'t started';
     
     players.push({
       Player: name,

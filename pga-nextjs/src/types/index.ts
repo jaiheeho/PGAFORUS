@@ -30,6 +30,9 @@ export interface BetResult {
   owner: string;
   total_points: number;
   details: PlayerResult[];
+  best_position: number;
+  best_player: string;
+  best_rank: string;
 }
 
 export interface BetEntry {

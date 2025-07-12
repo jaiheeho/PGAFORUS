@@ -83,7 +83,7 @@ export async function GET() {
   try {
     console.log('🏌️ Attempting to fetch real-time PGA leaderboard...');
     
-    // Try to fetch real-time data
+    // Try to fetch real-time data (always fresh, no cache)
     const liveData = await fetchPGALeaderboard();
     
     if (liveData && liveData.players.length > 0) {
@@ -94,18 +94,33 @@ export async function GET() {
         lastUpdated: liveData.lastUpdated
       };
       
-      return NextResponse.json(transformedData);
+      const response = NextResponse.json(transformedData);
+      // Add cache-busting headers to ensure fresh data
+      response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      return response;
     }
     
     // Fallback to mock data
     console.log('⚠️ Live data unavailable, using mock data');
-    return NextResponse.json(mockLeaderboardData);
+    const mockResponse = NextResponse.json(mockLeaderboardData);
+    // Add cache-busting headers to ensure fresh data
+    mockResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    mockResponse.headers.set('Pragma', 'no-cache');
+    mockResponse.headers.set('Expires', '0');
+    return mockResponse;
     
   } catch (error) {
     console.error('Error in leaderboard API:', error);
     
     // Return mock data as final fallback
     console.log('📝 Using mock leaderboard data due to error');
-    return NextResponse.json(mockLeaderboardData);
+    const errorResponse = NextResponse.json(mockLeaderboardData);
+    // Add cache-busting headers to ensure fresh data
+    errorResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    errorResponse.headers.set('Pragma', 'no-cache');
+    errorResponse.headers.set('Expires', '0');
+    return errorResponse;
   }
 } 
