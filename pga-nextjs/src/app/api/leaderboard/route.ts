@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { LeaderboardData } from '@/types';
 import { fetchPGALeaderboard } from '@/lib/leaderboard-fetcher';
+import { analyzeTournamentStatus, getTournamentStatusMessage } from '@/lib/tournament-status';
 
 // Mock data as fallback
 const mockLeaderboardData: LeaderboardData = {
@@ -89,9 +90,16 @@ export async function GET() {
     if (liveData && liveData.players.length > 0) {
       console.log(`✅ Real-time leaderboard data fetched successfully (${liveData.players.length} players)`);
       
+      // Analyze tournament status
+      const tournamentStatus = analyzeTournamentStatus(liveData.players);
+      console.log(`🏆 Tournament Status: ${tournamentStatus.phase} (Round ${tournamentStatus.currentRound}/${tournamentStatus.totalRounds}) - Confidence: ${tournamentStatus.confidence.toFixed(2)}`);
+      
       const transformedData: LeaderboardData = {
         players: liveData.players,
-        lastUpdated: liveData.lastUpdated
+        lastUpdated: liveData.lastUpdated,
+        tournamentStatus,
+        statusMessage: getTournamentStatusMessage(tournamentStatus),
+        tournament_name: liveData.tournament_name
       };
       
       const response = NextResponse.json(transformedData);
@@ -104,7 +112,14 @@ export async function GET() {
     
     // Fallback to mock data
     console.log('⚠️ Live data unavailable, using mock data');
-    const mockResponse = NextResponse.json(mockLeaderboardData);
+    const mockTournamentStatus = analyzeTournamentStatus(mockLeaderboardData.players);
+    const mockDataWithStatus = {
+      ...mockLeaderboardData,
+      tournamentStatus: mockTournamentStatus,
+      statusMessage: getTournamentStatusMessage(mockTournamentStatus)
+    };
+    
+    const mockResponse = NextResponse.json(mockDataWithStatus);
     // Add cache-busting headers to ensure fresh data
     mockResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     mockResponse.headers.set('Pragma', 'no-cache');
@@ -116,7 +131,14 @@ export async function GET() {
     
     // Return mock data as final fallback
     console.log('📝 Using mock leaderboard data due to error');
-    const errorResponse = NextResponse.json(mockLeaderboardData);
+    const errorTournamentStatus = analyzeTournamentStatus(mockLeaderboardData.players);
+    const errorDataWithStatus = {
+      ...mockLeaderboardData,
+      tournamentStatus: errorTournamentStatus,
+      statusMessage: getTournamentStatusMessage(errorTournamentStatus)
+    };
+    
+    const errorResponse = NextResponse.json(errorDataWithStatus);
     // Add cache-busting headers to ensure fresh data
     errorResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     errorResponse.headers.set('Pragma', 'no-cache');

@@ -12,12 +12,33 @@ interface DehydratedStateData {
   queries?: Array<{
     state?: {
       data?: {
-        leaderboard?: { players?: unknown[] }
+        leaderboard?: { 
+          players?: unknown[]
+          tournament?: {
+            name?: string
+            displayName?: string
+            tournamentName?: string
+          }
+        }
         field?: { players?: unknown[] }
         players?: unknown[]
         participants?: unknown[]
-        tournament?: { field?: unknown[] }
+        tournament?: { 
+          field?: unknown[]
+          name?: string
+          displayName?: string
+          tournamentName?: string
+        }
         data?: unknown[]
+        name?: string
+        displayName?: string
+        tournamentName?: string
+        metadata?: {
+          tournament?: {
+            name?: string
+            displayName?: string
+          }
+        }
       }
     }
   }>
@@ -110,12 +131,18 @@ export async function fetchPGALeaderboard(): Promise<PGALeaderboardResponse | nu
             
             if (jsonData?.props?.pageProps?.dehydratedState) {
               console.log('🎯 Found dehydratedState in Next.js data');
-              const players = extractPlayersFromDehydratedState(jsonData.props.pageProps.dehydratedState, tournamentName);
+              
+              // Extract tournament name from dehydrated state
+              const extractedTournamentName = extractTournamentName(jsonData.props.pageProps.dehydratedState);
+              const finalTournamentName = extractedTournamentName || tournamentName;
+              
+              const players = extractPlayersFromDehydratedState(jsonData.props.pageProps.dehydratedState, finalTournamentName);
               if (players && players.length > 0) {
                 console.log(`✅ Successfully extracted ${players.length} players from ${url}`);
+                console.log(`🏆 Tournament: ${finalTournamentName}`);
                 return {
                   players,
-                  tournament_name: tournamentName,
+                  tournament_name: finalTournamentName,
                   lastUpdated: new Date()
                 };
               }
@@ -138,6 +165,76 @@ export async function fetchPGALeaderboard(): Promise<PGALeaderboardResponse | nu
 
   } catch (error) {
     console.error('❌ Error fetching PGA leaderboard:', error);
+    return null;
+  }
+}
+
+function extractTournamentName(dehydratedState: DehydratedStateData): string | null {
+  try {
+    console.log('🔍 Extracting tournament name from dehydratedState...');
+    
+    const queries = dehydratedState?.queries || [];
+    
+    for (let i = 0; i < queries.length; i++) {
+      const query = queries[i];
+      const queryData = query?.state?.data;
+      
+      if (!queryData) continue;
+      
+      // Check for tournament data in various possible locations
+      // First check for direct tournamentName field
+      if (queryData?.tournamentName) {
+        console.log(`🏆 Found tournamentName in query ${i + 1}: ${queryData.tournamentName}`);
+        return queryData.tournamentName;
+      }
+      
+      if (queryData?.tournament?.name) {
+        console.log(`🏆 Found tournament name in query ${i + 1}: ${queryData.tournament.name}`);
+        return queryData.tournament.name;
+      }
+      
+      if (queryData?.tournament?.displayName) {
+        console.log(`🏆 Found tournament displayName in query ${i + 1}: ${queryData.tournament.displayName}`);
+        return queryData.tournament.displayName;
+      }
+      
+      if (queryData?.tournament?.tournamentName) {
+        console.log(`🏆 Found tournament tournamentName in query ${i + 1}: ${queryData.tournament.tournamentName}`);
+        return queryData.tournament.tournamentName;
+      }
+      
+      if (queryData?.leaderboard?.tournament?.name) {
+        console.log(`🏆 Found leaderboard tournament name in query ${i + 1}: ${queryData.leaderboard.tournament.name}`);
+        return queryData.leaderboard.tournament.name;
+      }
+      
+      if (queryData?.leaderboard?.tournament?.displayName) {
+        console.log(`🏆 Found leaderboard tournament displayName in query ${i + 1}: ${queryData.leaderboard.tournament.displayName}`);
+        return queryData.leaderboard.tournament.displayName;
+      }
+      
+      // Check for tournament info in other possible locations
+      if (queryData?.name && typeof queryData.name === 'string' && queryData.name.length > 10) {
+        console.log(`🏆 Found tournament name in query ${i + 1}: ${queryData.name}`);
+        return queryData.name;
+      }
+      
+      if (queryData?.displayName && typeof queryData.displayName === 'string' && queryData.displayName.length > 10) {
+        console.log(`🏆 Found tournament displayName in query ${i + 1}: ${queryData.displayName}`);
+        return queryData.displayName;
+      }
+      
+      // Check for tournament in metadata
+      if (queryData?.metadata?.tournament?.name) {
+        console.log(`🏆 Found tournament metadata name in query ${i + 1}: ${queryData.metadata.tournament.name}`);
+        return queryData.metadata.tournament.name;
+      }
+    }
+    
+    console.log('⚠️ No tournament name found in dehydratedState');
+    return null;
+  } catch (error) {
+    console.error('Error extracting tournament name:', error);
     return null;
   }
 }

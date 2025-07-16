@@ -27,22 +27,16 @@
 - **Security**: Row Level Security (RLS) with API-level authorization
 - **Features**: Real-time subscriptions, automatic timestamps, foreign key constraints
 
-### **Data Layer: Dual Backend Architecture**
-1. **Next.js API Routes** (Primary)
-   - `/api/auth/*` - Authentication handling
-   - `/api/bets` - Bet CRUD operations  
-   - `/api/leaderboard` - Tournament data
-   - `/api/results` - Points calculation
-   - `/api/draft-bet` - Draft bet management
-
-2. **Python Flask Application** (Legacy/Secondary)
-   - Web scraping PGA Tour data
-   - Alternative betting interface with HTML templates
-   - Cloud SQL integration for deployment
-   - Pandas-based data processing
+### **Data Layer: Next.js API Architecture**
+**Next.js API Routes** (Primary Backend)
+- `/api/auth/*` - Authentication handling
+- `/api/bets` - Bet CRUD operations  
+- `/api/leaderboard` - Tournament data
+- `/api/results` - Points calculation
+- `/api/draft-bet` - Draft bet management
 
 ### **Data Sources**
-- **Primary**: PGA Tour website scraping via Cheerio (Next.js) and BeautifulSoup (Python)
+- **Primary**: PGA Tour website scraping via Cheerio (Next.js)
 - **Fallback**: Mock data when live scraping fails
 - **Strategy**: Multiple URL attempts with robust error handling
 
@@ -58,10 +52,10 @@
 
 ### **Current Challenges** ⚠️
 
-#### 1. **Architecture Complexity**
-- **Dual Backend Problem**: Both Next.js API routes AND Flask application exist
-- **Database Confusion**: Multiple SQL setup/fix files indicating ongoing schema issues
-- **Authentication Split**: Mix of NextAuth (primary) and Supabase auth patterns
+#### 1. **Architecture Simplification** ✅
+- **Single Backend**: Next.js API routes provide unified backend architecture
+- **Database Clarity**: Supabase integration with proper RLS policies
+- **Authentication Standard**: NextAuth with Google OAuth as primary auth system
 
 #### 2. **Database Integration Issues**
 - **RLS Problems**: Multiple fix files for Row Level Security policies
@@ -73,23 +67,22 @@
 - **Mock Data Fallback**: System often runs on placeholder data
 - **No Data Validation**: Limited error handling for malformed tournament data
 
-#### 4. **Development Workflow Issues**
-- **Environment Complexity**: Multiple configuration files and setup scripts
-- **Deploy Pipeline**: Unclear which system (Next.js vs Flask) is primary for production
-- **Technical Debt**: Accumulated from schema changes and auth migrations
+#### 4. **Development Workflow** ✅
+- **Simplified Environment**: Single Next.js application with clear configuration
+- **Deploy Pipeline**: Vercel deployment for Next.js application
+- **Clean Architecture**: Consolidated codebase with TypeScript throughout
 
 ## 🚀 Improvement Recommendations
 
 ### **🔥 High Priority (Architecture & Stability)**
 
-#### 1. **Consolidate Backend Architecture**
+#### 1. **Backend Architecture** ✅
 ```
-Current: Next.js API + Flask + Supabase
-Recommended: Next.js API + Supabase only
+Current: Next.js API + Supabase (Unified)
 ```
-- **Remove Flask dependency** and migrate all Python functionality to Next.js
-- **Standardize on Next.js API routes** for all backend operations
-- **Eliminate deployment complexity** by having single application
+- **Single Backend**: Next.js API routes handle all backend operations
+- **Consistent Architecture**: TypeScript throughout the application
+- **Simplified Deployment**: Single application deployment pipeline
 
 #### 2. **Fix Database Foundation**
 - **Create proper migration system** instead of ad-hoc SQL fix files
@@ -155,7 +148,7 @@ Recommended: Next.js API + Supabase only
 
 ### **Phase 1: Stabilization (Week 1-2)**
 1. **Stabilize Database Schema** - Run cleanup scripts and establish proper migration system
-2. **Choose Primary Backend** - Either migrate Flask functionality to Next.js OR remove Next.js API routes
+2. **Backend Architecture** ✅ - Consolidated to Next.js API routes only
 3. **Fix Authentication Flow** - Ensure consistent auth patterns throughout the application
 
 ### **Phase 2: Reliability (Week 3-4)**
