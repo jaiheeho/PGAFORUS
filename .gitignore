@@ -32,10 +32,8 @@ ENV/
 env.bak/
 venv.bak/
 
-# Flask
-instance/
+# Database migrations (if needed in future)
 migrations/
-.webassets-cache
 
 # Node.js
 node_modules/

@@ -1,0 +1,10 @@
+Previous tournament summary:
+{summary}
+
+Current tournament context:
+Tournament: {tournament_name}
+Status: {tournament_status} (Round {current_round} of {total_rounds})
+Total Players: {total_players}
+
+Current Leaderboard (Top 10):
+{leaderboard_data} 

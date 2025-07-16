@@ -1,3 +1,5 @@
+import { TournamentStatus } from '@/lib/tournament-status';
+
 export interface Player {
   Player: string;
   Rank: string;
@@ -52,6 +54,9 @@ export interface BetEntry {
 export interface LeaderboardData {
   players: Player[];
   lastUpdated: Date;
+  tournamentStatus?: TournamentStatus;
+  statusMessage?: string;
+  tournament_name?: string;
 }
 
 export interface UpcomingPlayer {
