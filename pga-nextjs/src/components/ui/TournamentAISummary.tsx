@@ -8,6 +8,9 @@ import ReactMarkdown from 'react-markdown';
 interface TournamentAISummaryProps {
   tournamentName?: string;
   onSummaryGenerated?: (summary: string) => void;
+  prefetchedData?: SummaryData | null;
+  isLoadingPrefetch?: boolean;
+  prefetchError?: any;
 }
 
 interface SummaryData {
@@ -27,11 +30,17 @@ interface Message {
   timestamp: Date;
 }
 
-export function TournamentAISummary({ tournamentName, onSummaryGenerated }: TournamentAISummaryProps) {
-  const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
+export function TournamentAISummary({ 
+  tournamentName, 
+  onSummaryGenerated, 
+  prefetchedData, 
+  isLoadingPrefetch, 
+  prefetchError 
+}: TournamentAISummaryProps) {
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(prefetchedData || null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasInitialLoad, setHasInitialLoad] = useState(false);
+  const [hasInitialLoad, setHasInitialLoad] = useState(!!prefetchedData);
   
 
   
@@ -80,13 +89,29 @@ export function TournamentAISummary({ tournamentName, onSummaryGenerated }: Tour
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Remove automatic fetching on mount
+  // Handle prefetched data updates
   useEffect(() => {
-    // Only auto-load if we haven't loaded before and component is mounted
-    if (!hasInitialLoad && !summaryData) {
+    if (prefetchedData && !summaryData) {
+      setSummaryData(prefetchedData);
+      setHasInitialLoad(true);
+      onSummaryGenerated?.(prefetchedData.summary);
+    }
+  }, [prefetchedData, summaryData, onSummaryGenerated]);
+
+  // Handle prefetch errors
+  useEffect(() => {
+    if (prefetchError && !summaryData && !isLoading) {
+      setError(prefetchError.message || 'Failed to load AI summary');
+    }
+  }, [prefetchError, summaryData, isLoading]);
+
+  // Fallback loading if no prefetch and no data
+  useEffect(() => {
+    // Only auto-load if we haven't loaded before, no prefetch data, and not currently prefetching
+    if (!hasInitialLoad && !summaryData && !isLoadingPrefetch && !prefetchedData) {
       fetchSummary(false);
     }
-  }, [hasInitialLoad, summaryData]);
+  }, [hasInitialLoad, summaryData, isLoadingPrefetch, prefetchedData]);
 
   useEffect(() => {
     scrollToBottom();
@@ -174,28 +199,31 @@ export function TournamentAISummary({ tournamentName, onSummaryGenerated }: Tour
     "What should I watch for?"
   ];
 
-  // Show initial load state only for first load
-  if (isLoading && !hasInitialLoad) {
+  // Show initial load state for first load or prefetch loading
+  if ((isLoading && !hasInitialLoad) || (isLoadingPrefetch && !summaryData)) {
     return (
       <Card className="mb-4">
         <CardContent className="py-6">
           <div className="flex items-center justify-center space-x-3">
             <LoadingSpinner className="w-5 h-5" />
-            <span className="text-gray-600">Loading AI tournament summary...</span>
+            <span className="text-gray-600">
+              {isLoadingPrefetch ? 'Loading AI analysis...' : 'Loading AI tournament summary...'}
+            </span>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Show error state
-  if (error && !summaryData) {
+  // Show error state (prefer prefetch error over fetch error)
+  const displayError = prefetchError?.message || error;
+  if (displayError && !summaryData) {
     return (
       <Card className="mb-4 border-red-200">
         <CardContent className="py-6">
           <div className="flex items-center space-x-3 text-red-600">
             <AlertCircle className="w-5 h-5" />
-            <span>Failed to load summary: {error}</span>
+            <span>Failed to load summary: {displayError}</span>
             <Button 
               variant="outline" 
               size="sm" 
@@ -211,8 +239,8 @@ export function TournamentAISummary({ tournamentName, onSummaryGenerated }: Tour
     );
   }
 
-  // Show empty state with load button
-  if (!summaryData && !isLoading) {
+  // Show empty state with load button (only if not currently prefetching)
+  if (!summaryData && !isLoading && !isLoadingPrefetch) {
     return (
       <Card className="mb-4 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
         <CardContent className="py-6">
@@ -284,68 +312,68 @@ export function TournamentAISummary({ tournamentName, onSummaryGenerated }: Tour
           {/* AI Summary with Beautiful Markdown Rendering */}
           {summaryData && (
             <div className="bg-white rounded-lg p-5 shadow-sm border border-blue-100">
-              <div className="prose prose-sm max-w-none">
+              <div className="prose prose-xs max-w-none text-sm">
                 <ReactMarkdown 
                   components={{
                     h1: ({ children }) => (
-                      <h1 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                      <h1 className="text-lg font-bold text-gray-900 mb-3 pb-2 border-b border-gray-200">
                         {children}
                       </h1>
                     ),
                     h2: ({ children }) => (
-                      <h2 className="text-lg font-semibold text-gray-800 mb-3 mt-5 flex items-center">
-                        <span className="w-1 h-6 bg-blue-500 rounded-full mr-3"></span>
+                      <h2 className="text-base font-semibold text-gray-800 mb-2 mt-4 flex items-center">
+                        <span className="w-1 h-5 bg-blue-500 rounded-full mr-2"></span>
                         {children}
                       </h2>
                     ),
                     h3: ({ children }) => (
-                      <h3 className="text-md font-medium text-gray-800 mb-2 mt-4">
+                      <h3 className="text-sm font-medium text-gray-800 mb-2 mt-3">
                         {children}
                       </h3>
                     ),
                     p: ({ children }) => (
-                      <p className="text-gray-700 mb-3 leading-relaxed">
+                      <p className="text-gray-700 mb-2 leading-relaxed text-sm">
                         {children}
                       </p>
                     ),
                     ul: ({ children }) => (
-                      <ul className="list-none ml-0 mb-4 space-y-2">
+                      <ul className="list-none ml-0 mb-3 space-y-1">
                         {children}
                       </ul>
                     ),
                     ol: ({ children }) => (
-                      <ol className="list-decimal ml-5 mb-4 space-y-2">
+                      <ol className="list-decimal ml-4 mb-3 space-y-1">
                         {children}
                       </ol>
                     ),
                     li: ({ children }) => (
-                      <li className="text-gray-700 leading-relaxed flex items-start">
-                        <span className="w-2 h-2 bg-blue-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                      <li className="text-gray-700 leading-relaxed flex items-start text-sm">
+                        <span className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
                         <span>{children}</span>
                       </li>
                     ),
                     strong: ({ children }) => (
-                      <strong className="font-semibold text-gray-900 bg-yellow-100 px-1 rounded">
+                      <strong className="font-semibold text-gray-900 bg-yellow-100 px-1 rounded text-sm">
                         {children}
                       </strong>
                     ),
                     em: ({ children }) => (
-                      <em className="italic text-blue-700 font-medium">
+                      <em className="italic text-blue-700 font-medium text-sm">
                         {children}
                       </em>
                     ),
                     blockquote: ({ children }) => (
-                      <blockquote className="border-l-4 border-blue-300 pl-4 italic text-gray-600 my-4 bg-blue-50 py-2 rounded-r">
+                      <blockquote className="border-l-4 border-blue-300 pl-3 italic text-gray-600 my-3 bg-blue-50 py-2 rounded-r text-sm">
                         {children}
                       </blockquote>
                     ),
                     code: ({ children }) => (
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800">
+                      <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-800">
                         {children}
                       </code>
                     ),
                     hr: () => (
-                      <hr className="border-gray-200 my-6" />
+                      <hr className="border-gray-200 my-4" />
                     ),
                   }}
                 >
@@ -402,28 +430,28 @@ export function TournamentAISummary({ tournamentName, onSummaryGenerated }: Tour
                         )}
                         
                         <div
-                          className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg text-sm ${
+                          className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg text-xs ${
                             message.type === 'user'
                               ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white'
                               : 'bg-gray-50 text-gray-800 border border-gray-200'
                           }`}
                         >
                           {message.type === 'ai' ? (
-                            <div className="prose prose-sm max-w-none">
+                            <div className="prose prose-xs max-w-none text-xs">
                               <ReactMarkdown
                                 components={{
                                   p: ({ children }) => (
-                                    <p className="text-gray-700 mb-1 leading-relaxed last:mb-0">
+                                    <p className="text-gray-700 mb-1 leading-relaxed last:mb-0 text-xs">
                                       {children}
                                     </p>
                                   ),
                                   strong: ({ children }) => (
-                                    <strong className="font-semibold text-gray-900">
+                                    <strong className="font-semibold text-gray-900 text-xs">
                                       {children}
                                     </strong>
                                   ),
                                   em: ({ children }) => (
-                                    <em className="italic text-blue-700">
+                                    <em className="italic text-blue-700 text-xs">
                                       {children}
                                     </em>
                                   ),
@@ -433,8 +461,8 @@ export function TournamentAISummary({ tournamentName, onSummaryGenerated }: Tour
                                     </ul>
                                   ),
                                   li: ({ children }) => (
-                                    <li className="text-gray-700 leading-relaxed flex items-start">
-                                      <span className="w-1 h-1 bg-blue-400 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
+                                    <li className="text-gray-700 leading-relaxed flex items-start text-xs">
+                                      <span className="w-1 h-1 bg-blue-400 rounded-full mt-1 mr-1.5 flex-shrink-0"></span>
                                       <span>{children}</span>
                                     </li>
                                   ),
@@ -444,7 +472,7 @@ export function TournamentAISummary({ tournamentName, onSummaryGenerated }: Tour
                               </ReactMarkdown>
                             </div>
                           ) : (
-                            <span>{message.content}</span>
+                            <span className="text-xs">{message.content}</span>
                           )}
                           <p className={`text-xs mt-1 ${message.type === 'user' ? 'text-blue-100' : 'text-gray-500'}`}>
                             {message.timestamp.toLocaleTimeString()}

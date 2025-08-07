@@ -89,12 +89,6 @@ export function TournamentStatusComponent({ tournamentStatus, statusMessage, tou
       {/* Collapsible Content */}
       {isExpanded && (
         <div className="space-y-4">
-          {/* AI Tournament Summary with Integrated Chat */}
-          <TournamentAISummary 
-            tournamentName={tournamentName}
-            onSummaryGenerated={handleSummaryGenerated}
-          />
-
           {/* Tournament Status Details */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h4 className="font-medium text-gray-900 mb-2">Tournament Status Details</h4>

@@ -309,7 +309,10 @@ async function generateTournamentSummary(tournamentData: any, forceRefresh: bool
       }
     };
 
-    // Save to cache (30 minutes expiration)
+    // Save to cache - 3 minutes for started tournaments, 30 minutes for pre-tournament
+    const isStarted = tournamentData.status.hasStarted;
+    const cacheMinutes = isStarted ? 3 : 30;
+    
     await saveSummaryToCache(
       tournamentName,
       tournamentStatus,
@@ -317,7 +320,7 @@ async function generateTournamentSummary(tournamentData: any, forceRefresh: bool
       totalRounds,
       summary,
       responseData.tournamentData,
-      30 // Cache for 30 minutes
+      cacheMinutes // Cache for 3 minutes if started, 30 minutes if not started
     );
 
     return NextResponse.json(responseData);
