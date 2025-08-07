@@ -78,22 +78,26 @@ export function analyzeTournamentStatus(players: any[]): TournamentStatus {
   const allPlayersHaveDashRounds = playerData.every(p => !p.hasRoundData);
   const allPlayersHaveDashRank = playerData.every(p => p.rank === '-');
 
-  if ((!indicators.hasScoreData && !indicators.hasRoundScores) || 
-      (allPlayersHaveEScores && allPlayersHaveDashRounds && allPlayersHaveDashRank)) {
+  // Tournament starts when at least one player gets a numeric position (your definition)
+  if (!indicators.hasPositions) {
+    // No players have numeric positions yet - tournament hasn't started
     phase = 'pre-tournament';
     confidence = 0.95;
-  } else if (indicators.hasScoreData && !indicators.cutMade && currentRound < totalRounds) {
+  } else if (indicators.hasPositions && !indicators.cutMade && currentRound < totalRounds) {
+    // Players have positions but tournament not complete
     phase = 'active';
-    confidence = 0.8;
-  } else if (indicators.cutMade && currentRound >= 2) {
-    phase = 'active';
-    confidence = 0.85;
-  } else if (currentRound >= totalRounds && indicators.hasScoreData) {
-    phase = 'completed';
     confidence = 0.9;
-  } else if (!indicators.hasScoreData && !indicators.hasMovement && !indicators.hasPositions) {
-    // Additional fallback for pre-tournament when data is unclear
-    phase = 'pre-tournament';
+  } else if (indicators.cutMade && currentRound >= 2) {
+    // Cut has been made - definitely active
+    phase = 'active';
+    confidence = 0.95;
+  } else if (currentRound >= totalRounds && indicators.hasScoreData) {
+    // All rounds complete
+    phase = 'completed';
+    confidence = 0.95;
+  } else if (indicators.hasPositions) {
+    // Has positions but unclear state - assume active
+    phase = 'active';
     confidence = 0.7;
   } else {
     phase = 'unknown';
@@ -163,9 +167,9 @@ export function shouldCalculateResults(status: TournamentStatus): boolean {
 export function getTournamentStatusMessage(status: TournamentStatus): string {
   switch (status.phase) {
     case 'pre-tournament':
-      return `Tournament hasn't started yet. Betting is open!`;
+      return `Tournament hasn't started yet. No players have numeric positions.`;
     case 'active':
-      return `Tournament is active (Round ${status.currentRound} of ${status.totalRounds})`;
+      return `Tournament is active (Round ${status.currentRound} of ${status.totalRounds}) - Players have positions`;
     case 'completed':
       return `Tournament completed (${status.totalRounds} rounds)`;
     default:
