@@ -33,6 +33,8 @@ export function TournamentAISummary({ tournamentName, onSummaryGenerated }: Tour
   const [error, setError] = useState<string | null>(null);
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
   
+
+  
   // Chat state
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -40,6 +42,8 @@ export function TournamentAISummary({ tournamentName, onSummaryGenerated }: Tour
   const [isChatOpen, setIsChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+
 
   const fetchSummary = async (forceRefresh: boolean = false) => {
     try {

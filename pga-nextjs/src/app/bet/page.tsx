@@ -38,6 +38,9 @@ export default function BetPage() {
 
   // Determine if results should be shown based on tournament status
   const tournamentStatus = leaderboardData?.tournamentStatus;
+  // Hide bets during pre-tournament in /bet page
+  const shouldHideBets = tournamentStatus ? !tournamentStatus.hasStarted : false;
+  // Show results only after tournament has started
   const shouldShowResults = tournamentStatus ? tournamentStatus.hasStarted : false;
 
   // Auto-expand all dropdowns by default when data loads
@@ -131,8 +134,8 @@ export default function BetPage() {
         </Card>
       )}
 
-      {/* Pre-Tournament Message - Hide Results */}
-      {tournamentStatus && !shouldShowResults && (
+      {/* Pre-Tournament Message - Hide Bets */}
+      {tournamentStatus && shouldHideBets && (
         <Card>
           <CardContent className="text-center py-12">
             <div className="flex flex-col items-center space-y-4">
@@ -147,7 +150,7 @@ export default function BetPage() {
                 <div className="flex items-center justify-center space-x-2 mt-4">
                   <Clock className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-gray-500">
-                    Results will be visible once the tournament starts
+                    Results will be visible once the first player gets a numeric position
                   </span>
                 </div>
               </div>
@@ -270,7 +273,10 @@ export default function BetPage() {
       {/* Scoring Guide */}
       <Card>
         <CardHeader>
-          <h2 className="text-lg font-semibold text-gray-900">Scoring System</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Scoring System
+            {shouldHideBets && <span className="text-sm font-normal text-gray-500 ml-2">(applies when tournament starts)</span>}
+          </h2>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
